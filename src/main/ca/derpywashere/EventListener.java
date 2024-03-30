@@ -1,5 +1,7 @@
 package ca.derpywashere;
 
+import java.util.Arrays;
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
@@ -21,9 +23,14 @@ public class EventListener extends ListenerAdapter
     {
         String str = event.getMessage().getContentRaw();
         String lowercase_str = str.toLowerCase();
-        if(lowercase_str.contains("one") || lowercase_str.contains("piece"))
-        {
+        String[] strings = lowercase_str.split(" ");
+
+        if(checkMessage(strings))
             event.getChannel().sendMessage("https://derpywashere.s-ul.eu/KhHYXcyo").queue();
-        }
+    }
+
+    protected static Boolean checkMessage(String[] strings)
+    {
+        return Arrays.stream(strings).anyMatch(s -> s.equals("one") || s.equals("piece"));
     }
 }

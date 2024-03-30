@@ -50,5 +50,12 @@ public class EventListenerTest
             Assert.fail();
         }
     }
+
+    @Test
+    public void validateString4()
+    {
+        String input = "bones pieced together";
+        Assert.assertFalse(EventListener.checkMessage(input.split(" ")));
+    }
 }
 
