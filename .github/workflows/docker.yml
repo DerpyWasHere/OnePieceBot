@@ -14,7 +14,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4
         with:
           name: OnePieceBot
           path: target/*jar-with-dependencies.jar
