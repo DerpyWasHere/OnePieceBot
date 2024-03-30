@@ -3,7 +3,4 @@
 FROM eclipse-temurin:21
 
 RUN mkdir /app
-COPY OnePieceBot.jar /app/OnePieceBot.jar
-
-WORKDIR /app
-RUN java -jar OnePieceBot.jar $DISCORD_API
+COPY target/OnePieceBot-1.0-SNAPSHOT-jar-with-dependencies.jar /app/OnePieceBot.jar
