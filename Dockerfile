@@ -3,4 +3,4 @@
 FROM eclipse-temurin:21
 
 RUN mkdir /app
-COPY OnePieceBot.jar /app/OnePieceBot.jar
+COPY OnePieceBot.jar/* /app/OnePieceBot.jar
