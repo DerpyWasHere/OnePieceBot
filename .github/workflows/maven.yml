@@ -29,13 +29,11 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B package --file pom.xml
-    - name: Create staging folder and copy files
-      run: mkdir staging && cp target/*.jar staging
-    - name: Upload artifacts
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Package
-        path: staging
+        name: OnePieceBot
+        path: target/*jar-with-dependencies.jar
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
