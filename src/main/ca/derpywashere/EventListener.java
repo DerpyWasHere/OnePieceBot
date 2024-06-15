@@ -81,22 +81,25 @@ public class EventListener extends ListenerAdapter
         if(checkMessage(strings))
         {
             String url = null;
-            int idx;
+            int idx = 0;
             try
             {
                 // Grab size of table
                 if(stmt == null)
                     throw new StatementNullException();
                 ResultSet querySize = stmt.executeQuery("SELECT COUNT(id) FROM image_urls");
-                querySize.next();
-                int size = querySize.getInt(1);
-                idx = generator.nextInt(size);
-
+                if(querySize.next())
+                {
+                    int size = querySize.getInt(1);
+                    idx = generator.nextInt(size);
+                }
                 // Grab the 'random' entry from the table
                 ResultSet queryRand = stmt.executeQuery(String.format("SELECT * FROM image_urls WHERE id=%d", idx));
-                queryRand.next();
-                url = queryRand.getString("url");
-                event.getChannel().sendMessage(url).queue();
+                if(queryRand.next())
+                {
+                    url = queryRand.getString("url");
+                    event.getChannel().sendMessage(url).queue();
+                }
             }
             catch(SQLException | StatementNullException e)
             {
@@ -192,5 +195,10 @@ public class EventListener extends ListenerAdapter
     }
 
     private static class URLNotFoundException extends RuntimeException {}
-    private static class StatementNullException extends NullPointerException {}
+    private static class StatementNullException extends NullPointerException {
+        @Override
+        public String getMessage() {
+            return "SQL Statement object is null";
+        }
+    }
 }
