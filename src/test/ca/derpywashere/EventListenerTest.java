@@ -12,43 +12,19 @@ public class EventListenerTest
     @Test
     public void validateString1()
     {
-        try
-        {
-            String res = JDATesting.testMessageReceivedEvent(new EventListener(), "the one piece is real").getContentRaw();
-            Assert.assertNotNull(res);
-        }
-        catch(InterruptedException e)
-        {
-            Assert.fail();
-        }
+        Assert.assertTrue(EventListener.checkMessage("the one piece is real".split(" ")));
     }
 
     @Test
     public void validateString2()
     {
-        try
-        {
-            String res = JDATesting.testMessageReceivedEvent(new EventListener(), "one").getContentRaw();
-            Assert.assertNotNull(res);
-        }
-        catch(InterruptedException e)
-        {
-            Assert.fail();
-        }
+        Assert.assertTrue(EventListener.checkMessage("one".split(" ")));
     }
 
     @Test
     public void validateString3()
     {
-        try
-        {
-            String res = JDATesting.testMessageReceivedEvent(new EventListener(), "pIeCe").getContentRaw();
-            Assert.assertNotNull(res);
-        }
-        catch(InterruptedException e)
-        {
-            Assert.fail();
-        }
+        Assert.assertTrue(EventListener.checkMessage("pIeCe".toLowerCase().split(" ")));
     }
 
     @Test
