@@ -54,7 +54,7 @@ public class EventListener extends ListenerAdapter
     public EventListener(String user, String pwd, String ip) {
 
         generator = new Random();
-        final String jdbcString = String.format("jdbc:mysql://%s/OnePieceBot", ip);
+        final String jdbcString = String.format("jdbc:mysql://%s/OnePieceBot?autoReconnect=true", ip);
         try {
             Connection con = DriverManager.getConnection(jdbcString, user, pwd);
             stmt = con.createStatement();
