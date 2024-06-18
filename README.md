@@ -13,9 +13,10 @@ A Dockerfile is provided for containerization, and is hosted [here](https://hub.
 
 Simply run 
 ```
-docker run --name OnePieceBot -d --rm derpywashere/onepiecebot:main java -jar app/OnePieceBot.jar {API_KEY}
+docker run --name OnePieceBot -d --rm derpywashere/onepiecebot:main java -jar app/OnePieceBot.jar {API_KEY} {DATABASE_USER} {DATABASE_PASSWORD} {DATABASE_IP} 
 ```
 for Docker containerization, or
 ```
-java -jar target/*with-dependencies.jar {API_KEY}
+java -jar target/*with-dependencies.jar {API_KEY} {DATABASE_USER} {DATABASE_PASSWORD} {DATABASE_IP}
 ```
+This assumes that you have a MySQL database running with appropriate permissions.
