@@ -21,6 +21,10 @@ import java.sql.ResultSet;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+//
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Override of JDA EventListener
  * Listens for messages sent in Discord guilds
@@ -31,6 +35,8 @@ public class EventListener extends ListenerAdapter
 {
     private Statement stmt;
     private final Random generator;
+    private final String user, pwd, ip;
+    private final Logger log;
 
     // Default strings if DB does not work
     private final String[] urlStrings = {
@@ -54,20 +60,53 @@ public class EventListener extends ListenerAdapter
     public EventListener(String user, String pwd, String ip) {
 
         generator = new Random();
-        final String jdbcString = String.format("jdbc:mysql://%s/OnePieceBot?autoReconnect=true", ip);
-        try {
-            Connection con = DriverManager.getConnection(jdbcString, user, pwd);
-            stmt = con.createStatement();
-        }
-        catch(SQLException e)
+        log = LogManager.getLogger();
+
+        if(user == null || pwd == null || ip == null)
         {
-            // DB errored in constructor
-            // Explicitly opaque, does not send error message, only prints.
-            System.out.println("DB Error:");
-            System.out.println(e.getMessage());
+            this.user = null;
+            this.pwd = null;
+            this.ip = null;
+            return;
         }
+        connect(user, pwd, ip);
+        this.user = user;
+        this.pwd = pwd;
+        this.ip = ip;
     }
 
+    private void connect(String user, String pwd, String ip)
+    {
+        int retryCount = 5;
+        final String jdbcString = String.format("jdbc:mysql://%s/OnePieceBot", ip);
+        String sqlState = "";
+        while(retryCount != 0)
+        {
+            try
+            {
+                Connection con = DriverManager.getConnection(jdbcString, user, pwd);
+                stmt = con.createStatement();
+                return;
+            }
+            catch (SQLException e)
+            {
+                // DB errored in constructor
+                log.error(e.getMessage());
+                sqlState = e.getSQLState();
+                log.error("with sqlState " + sqlState);
+            }
+            retryCount--;
+        }
+        log.fatal("Could not connect to database!");
+        log.fatal("with sqlState " + sqlState);
+    }
+
+    private void getDefaultURL(MessageReceivedEvent event)
+    {
+        // Default if DB errors
+        String url = urlStrings[generator.nextInt(urlStrings.length)];
+        event.getChannel().sendMessage(url).queue();
+    }
     @Override
     public void onMessageReceived(MessageReceivedEvent event)
     {
@@ -77,16 +116,21 @@ public class EventListener extends ListenerAdapter
         String[] strings = lowercase_str.split(" ");
         String[] tokens = str.split(" ");
 
+        // Check if we have a DB
+        if(user == null || pwd == null || ip == null)
+        {
+            getDefaultURL(event);
+            return;
+        }
+
         // Check for "one" and or "piece"
         if(checkMessage(strings))
         {
-            String url = null;
+            String url;
             int idx = 0;
             try
             {
                 // Grab size of table
-                if(stmt == null)
-                    throw new StatementNullException();
                 ResultSet querySize = stmt.executeQuery("SELECT COUNT(id) FROM image_urls");
                 if(querySize.next())
                 {
@@ -101,15 +145,20 @@ public class EventListener extends ListenerAdapter
                     event.getChannel().sendMessage(url).queue();
                 }
             }
-            catch(SQLException | StatementNullException e)
+            catch(SQLException e)
             {
                 // DB errored
-                event.getChannel().sendMessage("Error in retrieving URL:").queue();
-                event.getChannel().sendMessage(e.getMessage()).queue();
+                log.warn("Error in retrieving URL:");
+                log.warn(e.getMessage());
 
-                // Default if DB errors
-                url = urlStrings[generator.nextInt(urlStrings.length)];
-                event.getChannel().sendMessage(url).queue();
+                String sqlState = e.getSQLState();
+                if("08S01".equals(sqlState))
+                {
+                    log.warn("Reconnecting to database at " + ip);
+                    connect(user, pwd, ip);
+                    onMessageReceived(event);
+                    return;
+                }
             }
         }
 
@@ -139,8 +188,16 @@ public class EventListener extends ListenerAdapter
             catch(SQLException e)
             {
                 // DB errored
-                event.getChannel().sendMessage("Error in adding URL:").queue();
-                event.getChannel().sendMessage(e.getMessage()).queue();
+                log.warn("Error in adding URL:");
+                log.warn(e.getMessage());
+
+                String sqlState = e.getSQLState();
+                if("08S01".equals(sqlState))
+                {
+                    log.warn("Reconnecting to database at " + ip);
+                    connect(user, pwd, ip);
+                    onMessageReceived(event);
+                }
             }
         }
 
@@ -177,10 +234,19 @@ public class EventListener extends ListenerAdapter
                 event.getChannel().sendMessage(String.format("URL '%s' is malformed.\n", tokens[1])).queue();
             }
             // Catch DB errors
-            catch (SQLException e) {
+            catch(SQLException e)
+            {
                 // DB errored
-                event.getChannel().sendMessage("Error in deleting URL:").queue();
-                event.getChannel().sendMessage(e.getMessage()).queue();
+                log.warn("Error in deleting URL:");
+                log.warn(e.getMessage());
+
+                String sqlState = e.getSQLState();
+                if("08S01".equals(sqlState))
+                {
+                    log.warn("Reconnecting to database at " + ip);
+                    connect(user, pwd, ip);
+                    onMessageReceived(event);
+                }
             }
             // URL doesn't exist, show error message
             catch (URLNotFoundException e) {
@@ -195,10 +261,4 @@ public class EventListener extends ListenerAdapter
     }
 
     private static class URLNotFoundException extends RuntimeException {}
-    private static class StatementNullException extends NullPointerException {
-        @Override
-        public String getMessage() {
-            return "SQL Statement object is null";
-        }
-    }
 }
